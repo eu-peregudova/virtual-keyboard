@@ -6,6 +6,19 @@ let keysPlate = document.createElement('div')
 let langDescription = document.createElement('p')
 keysPlate.classList.add('keys-plate')
 
+let capsState = false;
+
+
+if (!localStorage.getItem('language')) {
+    localStorage.setItem('language', 'english')
+}
+
+
+let functionKeys = ['Tab', 'CapsLock', 'Shift', 'Alt', 'Control', 'Meta', 'Backspace', 'Enter',
+    'ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Delete']
+
+const capsLock = document.querySelector('#CapsLock')
+
 document.body.append(mainArea);
 mainArea.append(langDescription);
 langDescription.innerText = localStorage.getItem('language') === 'english' ?
@@ -73,3 +86,100 @@ function findChar(code, shift) {
         }
     }
 }
+
+document.addEventListener('keydown', (event) => {
+    if (event.repeat) {
+        return
+    }
+
+    textArea.focus()
+    langChange(event.getModifierState('CapsLock'), event.shiftKey)
+
+    if (event.key === 'Tab') {
+        event.preventDefault()
+        charWrite('    ')
+    }
+    if (event.key === 'CapsLock') {
+        event.preventDefault()
+        capsState = !capsState
+    }
+    if (event.altKey && event.ctrlKey) {
+        localStorage.getItem('language') === 'english'
+            ? localStorage.setItem('language', 'russian')
+            : localStorage.setItem('language', 'english')
+        langChange()
+    }
+
+    if (!functionKeys.includes(event.key)) {
+        event.preventDefault()
+        charWrite(findChar(event.code, event.shiftKey))
+    }
+
+    document.querySelector(`#${event.code}`).classList.add('key-button--active')
+})
+
+document.addEventListener('keyup', (event) => {
+    langChange(event.getModifierState('CapsLock'), event.shiftKey)
+
+    if (event.repeat) {
+        return
+    }
+
+    document.querySelector(`#${event.code}`).classList.remove('key-button--active')
+})
+
+document.addEventListener('click', (e) => {
+    let caps = e.getModifierState('CapsLock') ^ e.shiftKey ? 'Up' : ''
+    langChange(e.getModifierState('CapsLock'), e.shiftKey)
+
+
+    if (!e.target.classList.contains('button-key')) {
+        return
+    }
+    const lang = localStorage.getItem('language')
+    textArea.focus()
+
+    if (e.target.id === 'Backspace' || e.target.id === 'Delete') {
+        let caretStart = textArea.selectionStart
+        let caretEnd = textArea.selectionEnd
+        let back = Number(e.target.id === 'Backspace')
+        if (caretEnd !== caretStart) {
+            textArea.value = textArea.value.slice(0, caretStart) + textArea.value.slice(caretEnd, textArea.value.length)
+            textArea.selectionStart = caretStart
+            textArea.selectionEnd = caretStart
+        } else {
+            textArea.value = textArea.value.slice(0, caretStart - back) + textArea.value.slice(caretStart + 1 - back, textArea.value.length)
+            textArea.selectionStart = caretStart - back
+            textArea.selectionEnd = caretStart - back
+        }
+    } else if (e.target.id === 'Tab') {
+        textArea.value = textArea.value.slice(0, textArea.selectionStart) + '    ' + textArea.value.slice(textArea.selectionStart, textArea.value.length)
+    } else if (e.target.id === 'Enter') {
+        textArea.value = textArea.value.slice(0, textArea.selectionStart) + '\n' + textArea.value.slice(textArea.selectionStart, textArea.value.length)
+    } else if (e.target.id === 'ControlLeft'
+        || e.target.id === 'ControlRight'
+        || e.target.id === 'AltLeft'
+        || e.target.id === 'AltRight'
+        || e.target.id === 'MetaLeft'
+        || e.target.id === 'ShiftRight'
+        || e.target.id === 'ShiftLeft') {
+
+    } else if (e.target.id === 'CapsLock') {
+        langChange(true)
+    } else {
+        charWrite(e.target.dataset[`${lang}${caps}`])
+    }
+
+})
+
+document.addEventListener('mousedown', (e) => {
+    if (e.target.id === 'ShiftRight' || e.target.id === 'ShiftLeft') {
+        langChange(e.getModifierState('CapsLock'), true)
+    }
+})
+
+document.addEventListener('mouseup', (e) => {
+    if (e.target.id === 'ShiftRight' || e.target.id === 'ShiftLeft') {
+        langChange(e.getModifierState('CapsLock'), false)
+    }
+})
