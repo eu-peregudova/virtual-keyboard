@@ -6,3 +6,32 @@ let keysPlate = document.createElement('div')
 let langDescription = document.createElement('p')
 keysPlate.classList.add('keys-plate')
 
+document.body.append(mainArea);
+mainArea.append(langDescription);
+langDescription.innerText = localStorage.getItem('language') === 'english' ?
+    `to change the language ctrl + alt`
+    : `для смены языка ctrl + alt`
+mainArea.append(textArea, keysPlate);
+
+let keys = [];
+
+for (let j = 0; j < data.length; j += 1) {
+    let lang = localStorage.getItem('language')
+    let row = document.createElement('div')
+    row.classList.add(`row`)
+    row.classList.add(`row--${j + 1}`)
+    keysPlate.append(row)
+
+    for (let i = 0; i < data[j].length; i += 1) {
+        let key = document.createElement('button')
+        keys.push(key)
+        key.innerText = data[j][i][`${lang}`]
+        key.id = data[j][i]['code']
+        key.classList.add('button-key')
+        key.dataset.russian = data[j][i]['russian']
+        key.dataset.russianUp = data[j][i]['russianUp']
+        key.dataset.english = data[j][i]['english']
+        key.dataset.englishUp = data[j][i]['englishUp']
+        row.append(key)
+    }
+}
