@@ -35,3 +35,41 @@ for (let j = 0; j < data.length; j += 1) {
         row.append(key)
     }
 }
+
+function langChange(caps, shift) {
+    let up = caps ^ shift ? 'Up' : ''
+    if (localStorage.getItem('language') === 'russian') {
+        for (let i of keys) {
+            i.innerText = i.dataset[`russian${up}`]
+        }
+    } else {
+        for (let i of keys) {
+            i.innerText = i.dataset[`english${up}`]
+        }
+    }
+    langDescription.innerText = localStorage.getItem('language') === 'english'
+        ? `to change the language ctrl + alt`
+        : `для смены языка ctrl + alt`
+    if (caps) {
+        capsLock.classList.add('caps--active')
+    } else {
+        capsLock.classList.remove('caps--active')
+    }
+}
+
+function charWrite(char) {
+    let caretStart = textArea.selectionStart
+    textArea.value = textArea.value.slice(0, textArea.selectionStart) + char + textArea.value.slice(textArea.selectionStart, textArea.value.length)
+    textArea.selectionStart = caretStart + char.length
+    textArea.selectionEnd = caretStart + char.length
+}
+
+function findChar(code, shift) {
+    let language = localStorage.getItem('language')
+    let up = capsState ^ shift ? 'Up' : ''
+    for (let object of data.flat()) {
+        if (object.code === code) {
+            return object[`${language}${up}`]
+        }
+    }
+}
