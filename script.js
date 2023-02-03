@@ -7,6 +7,7 @@ const langDescription = document.createElement('p');
 keysPlate.classList.add('keys-plate');
 
 let capsState = false;
+let shiftState;
 
 if (!localStorage.getItem('language')) {
   localStorage.setItem('language', 'english');
@@ -53,7 +54,7 @@ function xor(a, b) {
 }
 
 function langChange(caps, shift) {
-  const up = xor(caps, shift) ? 'Up' : '';
+  const up = xor(capsState, shiftState) ? 'Up' : '';
   if (localStorage.getItem('language') === 'russian') {
     for (let i = 0; i < keys.length; i += 1) {
       keys[i].innerText = keys[i].dataset[`russian${up}`];
@@ -66,7 +67,7 @@ function langChange(caps, shift) {
   langDescription.innerText = localStorage.getItem('language') === 'english'
     ? 'to change the language ctrl + alt'
     : 'для смены языка ctrl + alt';
-  if (caps) {
+  if (capsState) {
     capsLock.classList.add('caps--active');
   } else {
     capsLock.classList.remove('caps--active');
@@ -75,8 +76,9 @@ function langChange(caps, shift) {
 
 function charWrite(char) {
   const caretStart = textArea.selectionStart;
-  textArea.value = textArea.value.slice(0, textArea.selectionStart)
-      + char + textArea.value.slice(textArea.selectionStart, textArea.value.length);
+  const caretEnd = textArea.selectionEnd;
+  textArea.value = textArea.value.slice(0, caretStart)
+        + char + textArea.value.slice(caretEnd, textArea.value.length);
   textArea.selectionStart = caretStart + char.length;
   textArea.selectionEnd = caretStart + char.length;
 }
@@ -99,7 +101,7 @@ document.addEventListener('keydown', (event) => {
   }
 
   textArea.focus();
-  langChange(event.getModifierState('CapsLock'), event.shiftKey);
+  langChange(capsState, shiftState);
 
   if (event.key === 'Tab') {
     event.preventDefault();
@@ -108,6 +110,10 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'CapsLock') {
     event.preventDefault();
     capsState = !capsState;
+  }
+  if (event.key === 'Shift') {
+    shiftState = true;
+    langChange(capsState, shiftState);
   }
   if (event.altKey && event.ctrlKey) {
     if (localStorage.getItem('language') === 'english') {
@@ -127,8 +133,12 @@ document.addEventListener('keydown', (event) => {
 });
 
 document.addEventListener('keyup', (event) => {
-  langChange(event.getModifierState('CapsLock'), event.shiftKey);
+  langChange(capsState, shiftState);
 
+  if (event.key === 'Shift') {
+    shiftState = false;
+    langChange(capsState, shiftState);
+  }
   if (event.repeat) {
     return;
   }
@@ -136,8 +146,9 @@ document.addEventListener('keyup', (event) => {
 });
 
 document.addEventListener('click', (e) => {
-  const caps = xor(capsState, e.shiftKey) ? 'Up' : '';
-  langChange(capsState, e.shiftKey);
+  const caps = xor(capsState, shiftState) ? 'Up' : '';
+  console.log(shiftState);
+  langChange(capsState, shiftState);
 
   if (!e.target.classList.contains('button-key')) {
     return;
@@ -145,51 +156,47 @@ document.addEventListener('click', (e) => {
   const lang = localStorage.getItem('language');
   textArea.focus();
 
-  if (e.target.id === 'Backspace' || e.target.id === 'Delete') {
-    const caretStart = textArea.selectionStart;
-    const caretEnd = textArea.selectionEnd;
-    const back = Number(e.target.id === 'Backspace');
-    if (caretEnd !== caretStart) {
-      textArea.value = textArea.value.slice(0, caretStart)
-          + textArea.value.slice(caretEnd, textArea.value.length);
-      textArea.selectionStart = caretStart;
-      textArea.selectionEnd = caretStart;
-    } else {
-      textArea.value = textArea.value.slice(0, caretStart - back)
-          + textArea.value.slice(caretStart + 1 - back, textArea.value.length);
-      textArea.selectionStart = caretStart - back;
-      textArea.selectionEnd = caretStart - back;
-    }
-  } else if (e.target.id === 'Tab') {
-    charWrite('    ');
-  } else if (e.target.id === 'Enter') {
-    charWrite('\n');
-  } else if ((e.target.id === 'ControlLeft'
+  if (!(e.target.id === 'ControlLeft'
         || e.target.id === 'ControlRight'
         || e.target.id === 'AltLeft'
         || e.target.id === 'AltRight'
         || e.target.id === 'MetaLeft'
         || e.target.id === 'ShiftRight'
         || e.target.id === 'ShiftLeft')) {
-
-  } else if (e.target.id === 'CapsLock') {
-    capsState = !capsState;
-    langChange(true);
-  } else {
-    charWrite(e.target.dataset[`${lang}${caps}`]);
+    if (e.target.id === 'Backspace' || e.target.id === 'Delete') {
+      const caretStart = textArea.selectionStart;
+      const back = Number(e.target.id === 'Backspace');
+      if (textArea.selectionEnd !== caretStart) {
+        charWrite('');
+      } else {
+        textArea.value = textArea.value.slice(0, caretStart - back)
+                    + textArea.value.slice(caretStart + 1 - back, textArea.value.length);
+        textArea.selectionStart = caretStart - back;
+        textArea.selectionEnd = caretStart - back;
+      }
+    } else if (e.target.id === 'Tab') {
+      charWrite('    ');
+    } else if (e.target.id === 'Enter') {
+      charWrite('\n');
+    } else if (e.target.id === 'CapsLock') {
+      capsState = !capsState;
+      langChange(capsState, shiftState);
+    } else {
+      charWrite(e.target.dataset[`${lang}${caps}`]);
+    }
   }
 });
 
 document.addEventListener('mousedown', (e) => {
+  shiftState = true;
   if (e.target.id === 'ShiftRight' || e.target.id === 'ShiftLeft') {
-    langChange(e.getModifierState('CapsLock'), true);
-    capsState = !capsState;
+    langChange(capsState, shiftState);
   }
 });
 
 document.addEventListener('mouseup', (e) => {
+  shiftState = false;
   if (e.target.id === 'ShiftRight' || e.target.id === 'ShiftLeft') {
-    langChange(e.getModifierState('CapsLock'), false);
-    capsState = !capsState;
+    langChange(capsState, shiftState);
   }
 });
