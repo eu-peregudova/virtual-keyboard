@@ -24,6 +24,16 @@ class Keys {
   }
 }
 
+function getChar(code, lang, up) {
+  let answer;
+  for (let i = 0; i < Keys.instances.length; i += 1) {
+    if (Keys.instances[i].code === code) {
+      answer = Keys.instances[i][`${lang}${up}`];
+    }
+  }
+  return answer;
+}
+
 if (!localStorage.getItem('language')) {
   localStorage.setItem('language', 'english');
 }
@@ -33,10 +43,10 @@ const functionKeys = ['Tab', 'CapsLock', 'Shift', 'Alt', 'Control', 'Meta', 'Bac
 
 document.body.append(mainArea);
 mainArea.append(langDescription);
+mainArea.append(textArea, keysPlate);
 langDescription.innerText = localStorage.getItem('language') === 'english'
   ? 'to change the language ctrl + alt'
   : 'для смены языка ctrl + alt';
-mainArea.append(textArea, keysPlate);
 
 for (let rowArray = 0; rowArray < data.length; rowArray += 1) {
   const lang = localStorage.getItem('language');
@@ -44,17 +54,17 @@ for (let rowArray = 0; rowArray < data.length; rowArray += 1) {
   row.classList.add('row');
   row.classList.add(`row--${rowArray + 1}`);
   keysPlate.append(row);
-  const up = capsState ? 'Up' : '';
 
   for (let obj = 0; obj < data[rowArray].length; obj += 1) {
     const key = new Keys(
+      data[rowArray][obj].code,
       data[rowArray][obj].russian,
       data[rowArray][obj].russianUp,
       data[rowArray][obj].english,
       data[rowArray][obj].englishUp,
     );
-    key.node.innerText = data[rowArray][obj][`${lang}${up}`];
-    key.node.id = data[rowArray][obj].code;
+    key.node.innerText = key[`${lang}`];
+    key.node.id = key.code;
     row.append(key.node);
   }
 }
@@ -65,20 +75,18 @@ function xor(a, b) {
   return (a || b) && !(a && b);
 }
 
-function langChange(caps, shift) {
+function langChange() {
   const up = xor(capsState, shiftState) ? 'Up' : '';
-  if (localStorage.getItem('language') === 'russian') {
-    for (let i = 0; i < Keys.instances.length; i += 1) {
-      Keys.instances[i].innerText = Keys.instances[i].dataset[`russian${up}`];
-    }
-  } else {
-    for (let i = 0; i < Keys.instances.length; i += 1) {
-      Keys.instances[i].innerText = Keys.instances[i].dataset[`english${up}`];
-    }
+  const lang = localStorage.getItem('language');
+
+  for (let i = 0; i < Keys.instances.length; i += 1) {
+    Keys.instances[i].node.innerText = Keys.instances[i][`${lang}${up}`];
   }
+
   langDescription.innerText = localStorage.getItem('language') === 'english'
     ? 'to change the language ctrl + alt'
     : 'для смены языка ctrl + alt';
+
   if (capsState) {
     capsLock.classList.add('caps--active');
   } else {
@@ -95,9 +103,9 @@ function charWrite(char) {
   textArea.selectionEnd = caretStart + char.length;
 }
 
-function findChar(code, shift) {
+function findChar(code) {
   const language = localStorage.getItem('language');
-  const up = xor(capsState, shift) ? 'Up' : '';
+  const up = xor(capsState, shiftState) ? 'Up' : '';
   let char;
   for (let object = 0; object < data.flat().length; object += 1) {
     if (data.flat()[object].code === code) {
@@ -138,7 +146,7 @@ document.addEventListener('keydown', (event) => {
 
   if (!functionKeys.includes(event.key)) {
     event.preventDefault();
-    charWrite(findChar(event.code, event.shiftKey));
+    charWrite(findChar(event.code, shiftState));
   }
 
   document.querySelector(`#${event.code}`).classList.add('key-button--active');
@@ -158,8 +166,7 @@ document.addEventListener('keyup', (event) => {
 });
 
 document.addEventListener('click', (e) => {
-  const caps = xor(capsState, shiftState) ? 'Up' : '';
-  console.log(shiftState);
+  const caps = xor(capsState, e.shiftKey) ? 'Up' : '';
   langChange(capsState, shiftState);
 
   if (!e.target.classList.contains('button-key')) {
@@ -194,7 +201,7 @@ document.addEventListener('click', (e) => {
       capsState = !capsState;
       langChange(capsState, shiftState);
     } else {
-      charWrite(e.target.dataset[`${lang}${caps}`]);
+      charWrite(getChar(e.target.id, lang, caps));
     }
   }
 });
