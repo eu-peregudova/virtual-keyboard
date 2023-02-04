@@ -9,6 +9,21 @@ keysPlate.classList.add('keys-plate');
 let capsState = false;
 let shiftState;
 
+class Keys {
+  static instances = [];
+
+  constructor(code, russian, russianUp, english, englishUp) {
+    this.code = code;
+    this.russian = russian;
+    this.russianUp = russianUp;
+    this.english = english;
+    this.englishUp = englishUp;
+    this.node = document.createElement('button');
+    this.node.classList.add('button-key');
+    Keys.instances.push(this);
+  }
+}
+
 if (!localStorage.getItem('language')) {
   localStorage.setItem('language', 'english');
 }
@@ -23,27 +38,24 @@ langDescription.innerText = localStorage.getItem('language') === 'english'
   : 'для смены языка ctrl + alt';
 mainArea.append(textArea, keysPlate);
 
-const keys = [];
-
-for (let j = 0; j < data.length; j += 1) {
+for (let rowArray = 0; rowArray < data.length; rowArray += 1) {
   const lang = localStorage.getItem('language');
   const row = document.createElement('div');
   row.classList.add('row');
-  row.classList.add(`row--${j + 1}`);
+  row.classList.add(`row--${rowArray + 1}`);
   keysPlate.append(row);
   const up = capsState ? 'Up' : '';
 
-  for (let i = 0; i < data[j].length; i += 1) {
-    const key = document.createElement('button');
-    keys.push(key);
-    key.innerText = data[j][i][`${lang}${up}`];
-    key.id = data[j][i].code;
-    key.classList.add('button-key');
-    key.dataset.russian = data[j][i].russian;
-    key.dataset.russianUp = data[j][i].russianUp;
-    key.dataset.english = data[j][i].english;
-    key.dataset.englishUp = data[j][i].englishUp;
-    row.append(key);
+  for (let obj = 0; obj < data[rowArray].length; obj += 1) {
+    const key = new Keys(
+      data[rowArray][obj].russian,
+      data[rowArray][obj].russianUp,
+      data[rowArray][obj].english,
+      data[rowArray][obj].englishUp,
+    );
+    key.node.innerText = data[rowArray][obj][`${lang}${up}`];
+    key.node.id = data[rowArray][obj].code;
+    row.append(key.node);
   }
 }
 
@@ -56,12 +68,12 @@ function xor(a, b) {
 function langChange(caps, shift) {
   const up = xor(capsState, shiftState) ? 'Up' : '';
   if (localStorage.getItem('language') === 'russian') {
-    for (let i = 0; i < keys.length; i += 1) {
-      keys[i].innerText = keys[i].dataset[`russian${up}`];
+    for (let i = 0; i < Keys.instances.length; i += 1) {
+      Keys.instances[i].innerText = Keys.instances[i].dataset[`russian${up}`];
     }
   } else {
-    for (let i = 0; i < keys.length; i += 1) {
-      keys[i].innerText = keys[i].dataset[`english${up}`];
+    for (let i = 0; i < Keys.instances.length; i += 1) {
+      Keys.instances[i].innerText = Keys.instances[i].dataset[`english${up}`];
     }
   }
   langDescription.innerText = localStorage.getItem('language') === 'english'
