@@ -1,5 +1,5 @@
-// eslint-disable-next-line import/extensions
 import data from './data.js';
+import KeysClass, { getCharSc } from './keysClass.js';
 
 const mainArea = document.createElement('main');
 const textArea = document.createElement('textarea');
@@ -9,31 +9,6 @@ keysPlate.classList.add('keys-plate');
 
 let capsState = false;
 let shiftState;
-
-class Keys {
-  static instances = [];
-
-  constructor(code, russian, russianUp, english, englishUp) {
-    this.code = code;
-    this.russian = russian;
-    this.russianUp = russianUp;
-    this.english = english;
-    this.englishUp = englishUp;
-    this.node = document.createElement('button');
-    this.node.classList.add('button-key');
-    Keys.instances.push(this);
-  }
-}
-
-function getChar(code, lang, up) {
-  let answer;
-  for (let i = 0; i < Keys.instances.length; i += 1) {
-    if (Keys.instances[i].code === code) {
-      answer = Keys.instances[i][`${lang}${up}`];
-    }
-  }
-  return answer;
-}
 
 if (!localStorage.getItem('language')) {
   localStorage.setItem('language', 'english');
@@ -57,7 +32,7 @@ for (let rowArray = 0; rowArray < data.length; rowArray += 1) {
   keysPlate.append(row);
 
   for (let obj = 0; obj < data[rowArray].length; obj += 1) {
-    const key = new Keys(
+    const key = new KeysClass(
       data[rowArray][obj].code,
       data[rowArray][obj].russian,
       data[rowArray][obj].russianUp,
@@ -80,8 +55,8 @@ function langChange() {
   const up = xor(capsState, shiftState) ? 'Up' : '';
   const lang = localStorage.getItem('language');
 
-  for (let i = 0; i < Keys.instances.length; i += 1) {
-    Keys.instances[i].node.innerText = Keys.instances[i][`${lang}${up}`];
+  for (let i = 0; i < KeysClass.instances.length; i += 1) {
+    KeysClass.instances[i].node.innerText = KeysClass.instances[i][`${lang}${up}`];
   }
 
   langDescription.innerText = localStorage.getItem('language') === 'english'
@@ -95,7 +70,12 @@ function langChange() {
   }
 }
 
-function charWrite(char) {
+function selectAll() {
+  textArea.selectionStart = 0;
+  textArea.selectionEnd = textArea.value.length;
+}
+
+function addCharToScreen(char) {
   const caretStart = textArea.selectionStart;
   const caretEnd = textArea.selectionEnd;
   textArea.value = textArea.value.slice(0, caretStart)
@@ -121,12 +101,16 @@ document.addEventListener('keydown', (event) => {
     return;
   }
 
+  if (!findChar(event.code, shiftState)) {
+    return;
+  }
+
   textArea.focus();
   langChange(capsState, shiftState);
 
   if (event.key === 'Tab') {
     event.preventDefault();
-    charWrite('    ');
+    addCharToScreen('    ');
   }
   if (event.key === 'CapsLock') {
     event.preventDefault();
@@ -144,16 +128,24 @@ document.addEventListener('keydown', (event) => {
     }
     langChange();
   }
+  if (event.ctrlKey && event.code === 'KeyA') {
+    selectAll();
+    return;
+  }
 
   if (!functionKeys.includes(event.key)) {
     event.preventDefault();
-    charWrite(findChar(event.code, shiftState));
+    addCharToScreen(findChar(event.code, shiftState));
   }
 
   document.querySelector(`#${event.code}`).classList.add('key-button--active');
 });
 
 document.addEventListener('keyup', (event) => {
+  if (!findChar(event.code, shiftState)) {
+    return;
+  }
+
   langChange(capsState, shiftState);
 
   if (event.key === 'Shift') {
@@ -187,7 +179,7 @@ document.addEventListener('click', (e) => {
       const caretStart = textArea.selectionStart;
       const back = Number(e.target.id === 'Backspace');
       if (textArea.selectionEnd !== caretStart) {
-        charWrite('');
+        addCharToScreen('');
       } else {
         textArea.value = textArea.value.slice(0, caretStart - back)
                     + textArea.value.slice(caretStart + 1 - back, textArea.value.length);
@@ -195,14 +187,14 @@ document.addEventListener('click', (e) => {
         textArea.selectionEnd = caretStart - back;
       }
     } else if (e.target.id === 'Tab') {
-      charWrite('    ');
+      addCharToScreen('    ');
     } else if (e.target.id === 'Enter') {
-      charWrite('\n');
+      addCharToScreen('\n');
     } else if (e.target.id === 'CapsLock') {
       capsState = !capsState;
       langChange(capsState, shiftState);
     } else {
-      charWrite(getChar(e.target.id, lang, caps));
+      addCharToScreen(getCharSc(e.target.id, lang, caps));
     }
   }
 });
