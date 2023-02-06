@@ -1,5 +1,5 @@
-import data from './data.js';
-import KeysClass, { getCharSc } from './keysClass.js';
+import data from './modules/data.js';
+import KeysClass, { getCharSc } from './modules/keysClass.js';
 
 const mainArea = document.createElement('main');
 const textArea = document.createElement('textarea');
