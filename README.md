@@ -2,7 +2,7 @@
 This project was done by me at [RSSchool](https://rs.school/index.html) JS course.
 
 It taught me how to use event handlers, local storage, and a bunch of minor stuff. 
-Also, one of the requirements was to use es-lint. I hated it, but I think my coding habits became healthier.
+Also, one of the requirements was to use ESLint. I hated it, but I think my coding habits became healthier.
 
 Challenges I faced while doing it:
 
